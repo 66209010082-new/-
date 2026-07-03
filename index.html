@@ -5,7 +5,6 @@
   <title>Smart Cash Flow Management</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
   :root { --brand:#2563EB; --navy:#0F172A; --accent:#22C55E; }
@@ -145,30 +144,6 @@
   </div>
   <!-- Toast container -->
   <div id="toasts" class="fixed top-4 right-4 z-[120] space-y-2 w-72"></div>
-
-  <!-- AUTH SCREEN -->
-  <div id="authScreen" class="hidden" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem">
-   <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 soft w-full max-w-sm">
-    <div class="flex items-center gap-3 mb-1">
-     <div class="w-10 h-10 rounded-xl grid place-items-center text-white shrink-0" style="background:linear-gradient(135deg,#2563EB,#22C55E)"><i data-lucide="wallet" style="width:22px;height:22px"></i></div>
-     <h1 class="font-bold" style="font-size:18px">Smart Cash Flow</h1>
-    </div>
-    <p id="authSubtitle" class="text-sm text-slate-500 dark:text-slate-400 mb-4">เข้าสู่ระบบเพื่อซิงค์ข้อมูลของคุณ</p>
-    <div id="authNotConfigured" class="hidden text-sm p-3 rounded-xl mb-4" style="background:#fef3c7;color:#92400e">
-     ยังไม่ได้ตั้งค่าฐานข้อมูล (Supabase) — ระบบจะทำงานแบบ "โหมดทดลอง" เก็บข้อมูลไว้ในเบราว์เซอร์นี้เท่านั้น ยังไม่ซิงค์ข้ามอุปกรณ์ ดูวิธีตั้งค่าในไฟล์ README ที่แนบมา
-    </div>
-    <form id="authForm" class="space-y-3">
-     <div><label for="authEmail" class="text-sm block mb-1">อีเมล</label><input id="authEmail" type="email" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm"></div>
-     <div><label for="authPassword" class="text-sm block mb-1">รหัสผ่าน</label><input id="authPassword" type="password" required minlength="6" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm"></div>
-     <p id="authError" class="text-sm hidden" style="color:#ef4444"></p>
-     <button id="authSubmitBtn" type="submit" class="btn w-full py-2 rounded-xl text-white" style="background:#2563EB">เข้าสู่ระบบ</button>
-    </form>
-    <button id="authToggleMode" class="btn w-full text-center text-sm mt-3 text-blue-600">ยังไม่มีบัญชี? สมัครสมาชิก</button>
-    <button id="authDemoBtn" class="btn w-full text-center text-sm mt-2 text-slate-400 hidden">ใช้งานโหมดทดลอง (ไม่ต้องล็อกอิน)</button>
-   </div>
-  </div>
-
-  <div id="appRoot" class="hidden">
   <div class="w-full flex full-h overflow-hidden">
    <!-- SIDEBAR -->
    <aside id="sidebar" class="fixed lg:static z-50 -translate-x-full lg:translate-x-0 transition-transform duration-300 w-64 shrink-0 h-full glass border-r border-slate-200 dark:border-slate-700 flex flex-col">
@@ -205,8 +180,6 @@
       <input id="globalSearch" type="text" class="pl-9 pr-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm w-44 md:w-60 outline-none focus:ring-2 ring-blue-400" placeholder="ค้นหา...">
      </div>
      <button id="resetBtn" title="ล้างข้อมูลทั้งหมด" class="btn relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="rotate-ccw" style="width:20px;height:20px"></i></button>
-     <span id="authUserEmail" class="text-xs text-slate-400 hidden sm:inline"></span>
-     <button id="logoutBtn" title="ออกจากระบบ" class="btn relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hidden"><i data-lucide="log-out" style="width:20px;height:20px"></i></button>
      <div class="w-9 h-9 rounded-full grid place-items-center text-white font-semibold" style="background:linear-gradient(135deg,#2563EB,#22C55E)">SC</div>
     </header>
     <!-- SCROLL AREA -->
@@ -425,49 +398,48 @@
     </div>
    </form>
   </div>
-  </div><!-- /appRoot -->
 
 <script>
 /* ============================================================
-   CONFIG — paste your Supabase project details here to go live.
-   Create a free project at https://supabase.com, run schema.sql
-   (included alongside this file) in the SQL editor, then copy your
-   Project URL and anon/public key from Project Settings → API.
-   ============================================================ */
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const isSupabaseConfigured = () =>
-  typeof SUPABASE_URL==='string' && SUPABASE_URL.startsWith('http') && !SUPABASE_URL.includes('YOUR_SUPABASE_URL') &&
-  typeof SUPABASE_ANON_KEY==='string' && SUPABASE_ANON_KEY.length>10 && !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY');
-const sb = (isSupabaseConfigured() && typeof supabase!=='undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-/* ============================================================
-   LOCAL fallback data layer — used only in demo mode (no Supabase
-   configured yet). Backed by window.storage when available (persists
-   per browser), otherwise plain in-memory storage for the session.
+   Local data layer — backed by window.storage (persists per user)
+   Falls back to in-memory storage if window.storage is unavailable.
    ============================================================ */
 const memoryDB = {};
 const storageAvailable = () => (typeof window.storage !== 'undefined');
+
 async function storeGet(key){
-  if(storageAvailable()){ try{ const r = await window.storage.get(key,false); return r ? r.value : null; }catch(e){ return null; } }
+  if(storageAvailable()){
+    try{ const r = await window.storage.get(key,false); return r ? r.value : null; }catch(e){ return null; }
+  }
   return Object.prototype.hasOwnProperty.call(memoryDB,key) ? memoryDB[key] : null;
 }
 async function storeSet(key,value){
-  if(storageAvailable()){ try{ const r = await window.storage.set(key,value,false); return !!r; }catch(e){ return false; } }
+  if(storageAvailable()){
+    try{ const r = await window.storage.set(key,value,false); return !!r; }catch(e){ return false; }
+  }
   memoryDB[key]=value; return true;
 }
 async function storeDelete(key){
-  if(storageAvailable()){ try{ const r = await window.storage.delete(key,false); return !!r; }catch(e){ return false; } }
+  if(storageAvailable()){
+    try{ const r = await window.storage.delete(key,false); return !!r; }catch(e){ return false; }
+  }
   delete memoryDB[key]; return true;
 }
 async function storeList(prefix){
-  if(storageAvailable()){ try{ const r = await window.storage.list(prefix,false); return r ? r.keys : []; }catch(e){ return []; } }
+  if(storageAvailable()){
+    try{ const r = await window.storage.list(prefix,false); return r ? r.keys : []; }catch(e){ return []; }
+  }
   return Object.keys(memoryDB).filter(k=>k.startsWith(prefix));
 }
+
 const PREFIX='cf:';
-const localDataSdk = {
+window.dataSdk = {
   _handler:null,
-  async init(handler){ this._handler = handler; await this._refresh(); return {isOk:true}; },
+  async init(handler){
+    this._handler = handler;
+    await this._refresh();
+    return {isOk:true};
+  },
   async create(rec){
     try{
       const id='r_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
@@ -506,66 +478,6 @@ const localDataSdk = {
     if(this._handler) this._handler.onDataChanged(records);
   }
 };
-
-/* ============================================================
-   SUPABASE data layer — real Postgres database, one row per record,
-   isolated per logged-in user via Row Level Security (see schema.sql).
-   ============================================================ */
-const supabaseDataSdk = {
-  _handler:null,
-  _channel:null,
-  async init(handler){
-    this._handler = handler;
-    await this._refresh();
-    if(this._channel) sb.removeChannel(this._channel);
-    this._channel = sb.channel('records-changes')
-      .on('postgres_changes', {event:'*', schema:'public', table:'records'}, ()=>{ this._refresh(); })
-      .subscribe();
-    return {isOk:true};
-  },
-  async create(rec){
-    try{
-      const { data:{ user } } = await sb.auth.getUser();
-      if(!user) return {isOk:false};
-      const row={...rec, user_id:user.id}; delete row.__backendId;
-      const { error } = await sb.from('records').insert(row);
-      if(error){ console.error(error); return {isOk:false}; }
-      await this._refresh();
-      return {isOk:true};
-    }catch(e){ console.error(e); return {isOk:false}; }
-  },
-  async update(rec){
-    try{
-      const row={...rec}; const id=row.__backendId; delete row.__backendId; delete row.id; delete row.user_id;
-      const { error } = await sb.from('records').update(row).eq('id', id);
-      if(error){ console.error(error); return {isOk:false}; }
-      await this._refresh();
-      return {isOk:true};
-    }catch(e){ console.error(e); return {isOk:false}; }
-  },
-  async delete(rec){
-    try{
-      const { error } = await sb.from('records').delete().eq('id', rec.__backendId);
-      if(error){ console.error(error); return {isOk:false}; }
-      await this._refresh();
-      return {isOk:true};
-    }catch(e){ console.error(e); return {isOk:false}; }
-  },
-  async clearAll(){
-    const { data:{ user } } = await sb.auth.getUser();
-    if(!user) return;
-    await sb.from('records').delete().eq('user_id', user.id);
-    await this._refresh();
-  },
-  async _refresh(){
-    const { data, error } = await sb.from('records').select('*').order('created_at',{ascending:false});
-    if(error){ console.error(error); return; }
-    const records=(data||[]).map(r=>({...r, __backendId:r.id}));
-    if(this._handler) this._handler.onDataChanged(records);
-  }
-};
-
-window.dataSdk = isSupabaseConfigured() ? supabaseDataSdk : localDataSdk;
 
 /* ============================================================
    App logic
